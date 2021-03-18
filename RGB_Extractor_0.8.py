@@ -1,90 +1,45 @@
 import os
 from tkinter import *
 import tkinter.filedialog
-import imageio
 from pathlib import Path
 from PIL import Image
-from openpyxl import Workbook, load_workbook
-from openpyxl.utils.dataframe import dataframe_to_rows
+import pandas as pd
 
-def get_R(p):
-    
-    pic = imageio.imread(p)
-    
-    length = pic.shape[0]
-    width = pic.shape[1]
+def get_RGB(p, df):
+
+    date = Image.open(p)._getexif()[36867]
+    pic = Image.open(p)
+    pic_pixel_map = pic.load()
+
+    width, length = pic.size
+
     R = 0
-
-    for i in range(length):
-        for j in range(width):
-            R = R + pic[ i, j, 0]
-            
-    return R
-
-def get_G(p):
-    
-    pic = imageio.imread(p)
-    
-    length = pic.shape[0]
-    width = pic.shape[1]
     G = 0
-
-    for i in range(length):
-        for j in range(width):
-            G = G + pic[ i, j, 1]
-    return G
-
-def get_B(p):
-    
-    pic = imageio.imread(p)
-    
-    length = pic.shape[0]
-    width = pic.shape[1]
     B = 0
-    
-    for i in range(length):
-        for j in range(width):
-            B = B + pic[ i, j, 2]
-            
-    return B
 
-def get_date_taken(p):
-    return Image.open(p)._getexif()[36867]
+    for i in range(width):
+        for j in range(length):
+            colors = pic_pixel_map[i, j]
+            R += colors[0]
+            G += colors[1]
+            B += colors[2]
+
+    Sum = R+G+B
+    df = df.append({'Date': date, 'Total_R': R, 'Total_G': G, 'Total_B': B, 'Sum': Sum}, ignore_index=True)
+
+    return df
 
 def alg(name,path):
+    df = pd.DataFrame(columns=['Date', 'Total_R', 'Total_G', 'Total_B', 'Sum'])
     filename = name + ".xlsx"
-    wb = Workbook()
-    dataSheet = wb.create_sheet('Data',0)
-    ref = wb['Sheet']
-    wb.remove(ref)
-    active = wb['Data']
-    
+
     pathlist = Path(path).glob('**/*.JPG')
 
-    current = dataSheet.cell(row= 1 , column = 1) 
-    current.value = "date-time"
-    current = dataSheet.cell(row= 1 , column = 2) 
-    current.value = "Total R"
-    current = dataSheet.cell(row= 1 , column = 3) 
-    current.value = "Total G"
-    current = dataSheet.cell(row= 1 , column = 4) 
-    current.value = "Total B"
-    
-    line = 2
-    
     for path in pathlist:
         path_in_str = str(path)
-        current = dataSheet.cell(row= line , column = 1) 
-        current.value = get_date_taken(path)
-        current = dataSheet.cell(row= line , column = 2) 
-        current.value = get_R(path_in_str)
-        current = dataSheet.cell(row= line , column = 3) 
-        current.value = get_G(path_in_str)
-        current = dataSheet.cell(row= line , column = 4) 
-        current.value = get_B(path_in_str)
+        df = get_RGB(path_in_str, df)
 
-        wb.save(filename)
-        line = line + 1
+    df.to_excel(filename) 
 
 window = Tk()
 window.title("RGB Data into Excel 0.4")
@@ -101,7 +56,7 @@ def run():
     curr_directory = os.getcwd()
     path = tkinter.filedialog.askdirectory()
     alg(filename,path)
-    
+
 def clicked():
     res = "Welcome to " + txt.get()
     lbl.configure(text= res)

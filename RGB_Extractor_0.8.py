@@ -39,10 +39,10 @@ def alg(name,path):
         path_in_str = str(path)
         df = get_RGB(path_in_str, df)
 
-    df.to_excel(filename) 
+    df.to_excel(filename)
 
 window = Tk()
-window.title("RGB Data into Excel 0.4")
+window.title("RGB Data into Excel")
 window.geometry('350x200+200+150')
 
 lbl = Label(window, text="Hello")
